@@ -1,0 +1,55 @@
+name: Build Vivino feed
+
+on:
+  schedule:
+    # Every hour at minute 17 (UTC). Off the top of the hour, when GitHub is busiest.
+    - cron: '17 * * * *'
+  workflow_dispatch: # adds a "Run workflow" button for manual runs
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate vivino.xml
+        run: node build-feed.mjs
+        env:
+          SHOPIFY_STORE_DOMAIN: ${{ secrets.SHOPIFY_STORE_DOMAIN }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_CLIENT_SECRET }}
+          SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
+          # Optional overrides (Settings > Secrets and variables > Actions > Variables)
+          WINE_TYPE_TAGS: ${{ vars.WINE_TYPE_TAGS }}
+          EXCLUDED_PRODUCT_TYPES: ${{ vars.EXCLUDED_PRODUCT_TYPES }}
+          NAME_USES_SUBTITLE: ${{ vars.NAME_USES_SUBTITLE }}
+          DEFAULT_INVENTORY: ${{ vars.DEFAULT_INVENTORY }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vivino.xml
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
