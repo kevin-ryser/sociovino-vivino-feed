@@ -100,7 +100,7 @@ Each run prints the wines with no vintage, no ABV or no producer tag, and those 
 
 ## How the feed decides what to include
 
-- The product must be **Active**, have one of the wine `t__` tags, not be a `Wine Case`, `Wine Club` or `Gift Card`, and be published to the **Online Store** sales channel (otherwise the link would be dead).
+- The product must be **Active**, have one of the wine `t__` tags, not be a `Wine Case`, `Wine Club` or `Gift Card`, not have the `exclude-from-filters` tag, and be published to the **Online Store** sales channel (otherwise the link would be dead).
 - The bottle size must be one Vivino supports.
 - The variant must be available for sale and have stock of at least 1. Stock is capped at 9999.
 - `product-id` is the variant SKU, or the Shopify variant ID when the SKU is empty.

@@ -59,6 +59,9 @@ const CONFIG = {
 
 // Kept small so each request stays under Shopify's 1,000-point query cost limit.
 const PRODUCTS_PER_PAGE = 15;
+
+// Products with this tag are kept out of the feed.
+const EXCLUDE_TAG = 'exclude-from-filters';
 const VARIANTS_PER_PRODUCT = 10;
 const COLLECTIONS_PER_PAGE = 250;
 
@@ -196,7 +199,7 @@ async function graphql(token, query, variables, attempt = 1) {
 
 async function fetchProducts(token) {
   const typeTags = CONFIG.wineTypeTags.map((t) => `tag:"t__${t}"`).join(' OR ');
-  const search = `status:active AND (${typeTags})`;
+  const search = `status:active AND (${typeTags}) AND -tag:"${EXCLUDE_TAG}"`;
 
   const products = [];
   let cursor = null;
@@ -346,8 +349,13 @@ function buildEntries(products, collectionTitles) {
     const t = parseTags(p.tags || []);
     applyProductDetails(t, value(p.productDetails));
 
-    // Double-check the API filter, and drop mixed cases, wine club and gift cards.
-    if (p.status !== 'ACTIVE' || !wineTypes.has(t.type) || excludedTypes.has((p.productType || '').trim().toLowerCase())) {
+    // Double-check the API filter, and drop mixed cases, wine club, gift cards and excluded-tag products.
+    if (
+      p.status !== 'ACTIVE' ||
+      !wineTypes.has(t.type) ||
+      excludedTypes.has((p.productType || '').trim().toLowerCase()) ||
+      (p.tags || []).some((tag) => tag.trim().toLowerCase() === EXCLUDE_TAG)
+    ) {
       skipped.notWine++;
       continue;
     }
